@@ -1,0 +1,14 @@
+{
+    acme_ca https://acme-v02.api.letsencrypt.org/directory
+}
+
+*.sol.place, *.arb.place, *.manta.place {
+	tls {
+		dns namecheap {
+			api_key {$NAMECHEAP_API_KEY}
+			user {$NAMECHEAP_USER}
+		}
+	}
+	# Forward all requests to 127.0.0.1:1800
+	reverse_proxy 127.0.0.1:1800
+}
