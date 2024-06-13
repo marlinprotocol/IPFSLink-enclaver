@@ -8,7 +8,7 @@ docker buildx create --name multiplatformEnclave --driver docker-container --boo
 docker buildx use multiplatformEnclave
 
 cd /app/mount/setup
-docker buildx build --platform linux/arm64 -t enclave:latest --load .
+docker buildx build --build-arg NAMECHEAP_USER=$NAMECHEAP_USER --build-arg NAMECHEAP_API_KEY=$NAMECHEAP_API_KEY --platform linux/arm64 -t enclave:latest --load .
 
 mkdir -p /app/mount/enclave
 mkdir -p /var/log/nitro_enclaves

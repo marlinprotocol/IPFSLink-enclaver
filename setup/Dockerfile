@@ -1,5 +1,32 @@
+# ipfsLink build from nodejs
+FROM node:22-alpine3.18 as node-builder
+
+WORKDIR /build
+
+RUN apk add git alpine-sdk python3 linux-headers
+RUN git clone -b beraname-resolver https://github.com/marlinprotocol/ipfsLink.git
+RUN cd ipfsLink && npm i && npm run build
+
+# acme-id build from rust
+FROM rust:alpine3.18 as rust-builder
+
+WORKDIR /build
+
+RUN apk add git alpine-sdk linux-headers
+RUN git clone https://github.com/marlinprotocol/oyster-caddy-account-uri.git
+RUN cd oyster-caddy-account-uri/signer && cargo build --release
+
+# kubo build
+FROM golang:alpine3.18 as go-builder
+
+WORKDIR /build
+
+RUN apk add alpine-sdk bash binutils-gold
+RUN git clone https://github.com/ipfs/kubo.git
+RUN cd kubo && make build
+
 # base image
-FROM alpine:3.18
+FROM node:22-alpine3.18 as enclave-builder
 
 # install dependency tools
 RUN apk add --no-cache net-tools iptables iproute2 wget ipset
@@ -42,17 +69,26 @@ COPY supervisord.conf /etc/supervisord.conf
 COPY setup.sh ./
 RUN chmod +x setup.sh
 
-# your custom setup goes here
+# setup caddy with namecheap plugin
 RUN wget -O caddy "https://caddyserver.com/api/download?os=linux&arch=arm64&p=github.com%2Fcaddy-dns%2Fnamecheap"
 RUN mv caddy /usr/bin/caddy
 RUN chmod +x /usr/bin/caddy
 ENV XDG_DATA_HOME=/var/lib
 
+# copy from builders
+COPY --from=node-builder --chown=10005:10005 /build/ipfsLink/dist/ /app/dist/
+COPY --from=rust-builder --chown=10005:10005 /build/oyster-caddy-account-uri/signer/target/release/signer /app/acme-id
+COPY --from=go-builder --chown=10005:10005 /build/kubo/cmd/ipfs/ipfs /app/ipfs
+
+ARG NAMECHEAP_USER
+ARG NAMECHEAP_API_KEY
+
+ENV NAMECHEAP_USER=${NAMECHEAP_USER}
+ENV NAMECHEAP_API_KEY=${NAMECHEAP_API_KEY}
+
+# copy config
 COPY Caddyfile /etc/caddy/Caddyfile
-COPY ipfsLink /app/ipfsLink
 COPY ipfsLinkConfig.json /app/ipfsLinkConfig.json
-COPY acme-id /app/acme-id
-COPY ipfs /app/ipfs
 
 # entry point
 ENTRYPOINT [ "/app/setup.sh" ]
