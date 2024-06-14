@@ -12,3 +12,7 @@
 	# Forward all requests to 127.0.0.1:1800
 	reverse_proxy 127.0.0.1:1800
 }
+
+:2000 {
+	reverse_proxy 127.0.0.1:8080
+}
