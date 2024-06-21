@@ -13,6 +13,6 @@
 	reverse_proxy 127.0.0.1:1800
 }
 
-:2000 {
-	reverse_proxy 127.0.0.1:8080
+*.sol.pub {
+	redir https://{labels.2}.sol.place{uri} permanent
 }

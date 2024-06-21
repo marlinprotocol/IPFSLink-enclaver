@@ -4,8 +4,8 @@ FROM node:22-alpine3.18 as node-builder
 WORKDIR /build
 
 RUN apk add git alpine-sdk python3 linux-headers
-RUN git clone -b beraname-resolver https://github.com/marlinprotocol/ipfsLink.git
-RUN cd ipfsLink && npm i && npm run build
+RUN git clone -b upgrade/sns-v2 https://github.com/marlinprotocol/ipfsLink.git
+RUN cd ipfsLink && npm i -f && npm run build
 
 # acme-id build from rust
 FROM rust:alpine3.18 as rust-builder
